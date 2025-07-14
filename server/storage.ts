@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser, type Blog, type InsertBlog } from "@shared/schema";
+import { users, sessions, type User, type InsertUser, type Blog, type InsertBlog, type Session } from "@shared/schema";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -7,28 +7,45 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  getBlogs(): Promise<Blog[]>;
+  getBlogs(includePrivate?: boolean): Promise<Blog[]>;
   getBlog(id: number): Promise<Blog | undefined>;
   getBlogBySlug(slug: string): Promise<Blog | undefined>;
   createBlog(blog: InsertBlog): Promise<Blog>;
   updateBlog(id: number, blog: Partial<InsertBlog>): Promise<Blog | undefined>;
   deleteBlog(id: number): Promise<boolean>;
+  createSession(userId: number): Promise<Session>;
+  getSession(sessionId: string): Promise<Session | undefined>;
+  deleteSession(sessionId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private blogs: Map<number, Blog>;
+  private sessions: Map<string, Session>;
   private currentUserId: number;
   private currentBlogId: number;
 
   constructor() {
     this.users = new Map();
     this.blogs = new Map();
+    this.sessions = new Map();
     this.currentUserId = 1;
     this.currentBlogId = 1;
     
+    // Create default admin user
+    this.seedUsers();
     // Add some sample blog posts
     this.seedBlogs();
+  }
+
+  private seedUsers() {
+    // Create admin user (password should be hashed in production)
+    const adminUser: User = {
+      id: this.currentUserId++,
+      username: "admin",
+      password: "admin123" // In production, this should be a hashed password
+    };
+    this.users.set(adminUser.id, adminUser);
   }
 
   private seedBlogs() {
@@ -43,6 +60,7 @@ export class MemStorage implements IStorage {
         publishedAt: new Date("2024-01-15"),
         readTime: 8,
         featured: true,
+        isDraft: false,
       },
       {
         title: "My Journey Through GATE 2025: Tips and Strategies",
@@ -54,6 +72,7 @@ export class MemStorage implements IStorage {
         publishedAt: new Date("2024-02-20"),
         readTime: 12,
         featured: true,
+        isDraft: false,
       },
       {
         title: "Building Conversational AI with LLaMA and LangChain",
@@ -65,6 +84,7 @@ export class MemStorage implements IStorage {
         publishedAt: new Date("2024-03-10"),
         readTime: 15,
         featured: false,
+        isDraft: false,
       },
     ];
 
@@ -97,10 +117,12 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getBlogs(): Promise<Blog[]> {
-    return Array.from(this.blogs.values()).sort((a, b) => 
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-    );
+  async getBlogs(includePrivate: boolean = false): Promise<Blog[]> {
+    return Array.from(this.blogs.values())
+      .filter(blog => includePrivate || !blog.isDraft)
+      .sort((a, b) => 
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
   }
 
   async getBlog(id: number): Promise<Blog | undefined> {
@@ -139,6 +161,34 @@ export class MemStorage implements IStorage {
 
   async deleteBlog(id: number): Promise<boolean> {
     return this.blogs.delete(id);
+  }
+
+  async createSession(userId: number): Promise<Session> {
+    const id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const session: Session = {
+      id,
+      userId,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    };
+    this.sessions.set(id, session);
+    return session;
+  }
+
+  async getSession(sessionId: string): Promise<Session | undefined> {
+    const session = this.sessions.get(sessionId);
+    if (!session) return undefined;
+    
+    // Check if session is expired
+    if (new Date() > session.expiresAt) {
+      this.sessions.delete(sessionId);
+      return undefined;
+    }
+    
+    return session;
+  }
+
+  async deleteSession(sessionId: string): Promise<boolean> {
+    return this.sessions.delete(sessionId);
   }
 }
 

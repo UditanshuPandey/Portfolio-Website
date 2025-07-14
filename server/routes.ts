@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertBlogSchema } from "@shared/schema";
+import { insertBlogSchema, loginSchema } from "@shared/schema";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -11,7 +11,75 @@ const contactSchema = z.object({
   message: z.string().min(1, "Message is required")
 });
 
+// Simple authentication middleware
+const requireAuth = async (req: any, res: any, next: any) => {
+  const sessionId = req.cookies?.sessionId;
+  
+  if (!sessionId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  
+  const session = await storage.getSession(sessionId);
+  if (!session) {
+    return res.status(401).json({ error: "Invalid session" });
+  }
+  
+  const user = await storage.getUser(session.userId);
+  if (!user) {
+    return res.status(401).json({ error: "User not found" });
+  }
+  
+  req.user = user;
+  next();
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = loginSchema.parse(req.body);
+      
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      const session = await storage.createSession(user.id);
+      res.cookie("sessionId", session.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      });
+      
+      res.json({ message: "Login successful", user: { id: user.id, username: user.username } });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error during login:", error);
+        res.status(500).json({ error: "Login failed" });
+      }
+    }
+  });
+
+  app.post("/api/auth/logout", requireAuth, async (req: any, res) => {
+    try {
+      const sessionId = req.cookies?.sessionId;
+      if (sessionId) {
+        await storage.deleteSession(sessionId);
+      }
+      res.clearCookie("sessionId");
+      res.json({ message: "Logout successful" });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      res.status(500).json({ error: "Logout failed" });
+    }
+  });
+
+  app.get("/api/auth/user", requireAuth, async (req: any, res) => {
+    res.json({ id: req.user.id, username: req.user.username });
+  });
   // Contact form endpoint
   app.post("/api/contact", async (req, res) => {
     try {
@@ -49,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Blog endpoints
+  // Blog endpoints (public)
   app.get("/api/blogs", async (req, res) => {
     try {
       const blogs = await storage.getBlogs();
@@ -91,7 +159,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/blogs", async (req, res) => {
+  // Admin blog endpoints (protected)
+  app.get("/api/admin/blogs", requireAuth, async (req, res) => {
+    try {
+      const blogs = await storage.getBlogs(true);
+      res.json(blogs);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/blogs", requireAuth, async (req, res) => {
     try {
       const validatedData = insertBlogSchema.parse(req.body);
       const blog = await storage.createBlog(validatedData);
@@ -108,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/blogs/:id", async (req, res) => {
+  app.put("/api/admin/blogs/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -135,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/blogs/:id", async (req, res) => {
+  app.delete("/api/admin/blogs/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "./theme-provider";
-import { Sun, Moon, Menu } from "lucide-react";
+import { Sun, Moon, Menu, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const navItems = [
@@ -19,6 +19,7 @@ const navItems = [
 export default function Navigation() {
   const [activeSection, setActiveSection] = useState("home");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { theme, setTheme } = useTheme();
   const [location] = useLocation();
 
@@ -36,6 +37,19 @@ export default function Navigation() {
       });
     };
 
+    // Check authentication status
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/auth/user", {
+          credentials: "include",
+        });
+        setIsAuthenticated(response.ok);
+      } catch (error) {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -102,6 +116,19 @@ export default function Navigation() {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Admin Button (only shown when authenticated) */}
+            {isAuthenticated && (
+              <Link href="/admin">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="hidden md:flex"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
+            
             {/* Dark Mode Toggle */}
             <Button
               variant="outline"
@@ -151,6 +178,17 @@ export default function Navigation() {
                       </button>
                     )
                   ))}
+                  
+                  {/* Admin Link for Mobile */}
+                  {isAuthenticated && (
+                    <Link
+                      href="/admin"
+                      className="text-left py-2 transition-colors text-gray-700 dark:text-gray-300 hover:text-primary flex items-center"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Admin
+                    </Link>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
