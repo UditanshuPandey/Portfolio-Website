@@ -56,11 +56,13 @@ export default function Projects() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500 dark:text-gray-400">{project.date}</span>
                   <div className="flex space-x-2">
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="default" className="flex items-center gap-2">
                       <Github className="w-4 h-4" />
+                      <span className="hidden sm:inline">Code</span>
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="default" className="flex items-center gap-2">
                       <ExternalLink className="w-4 h-4" />
+                      <span className="hidden sm:inline">Live</span>
                     </Button>
                   </div>
                 </div>

@@ -62,10 +62,10 @@ export function BlogPreview({ blog }: BlogPreviewProps) {
             </div>
           </div>
           
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/blog/${blog.slug}`}>
+          <Button variant="default" size="sm" asChild>
+            <Link href={`/blog/${blog.slug}`} className="flex items-center gap-1">
               Read More
-              <ArrowRight className="w-4 h-4 ml-1" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </Button>
         </div>
