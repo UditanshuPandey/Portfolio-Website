@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { User, Mail, ExternalLink } from "lucide-react";
+import { User, Mail, ExternalLink, BookOpen } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Hero() {
   const scrollToSection = (id: string) => {
@@ -52,6 +53,16 @@ export default function Hero() {
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               View Projects
+            </Button>
+            <Button
+              variant="outline"
+              asChild
+              className="border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 py-3 rounded-full font-medium"
+            >
+              <Link href="/blog">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Read Blog
+              </Link>
             </Button>
           </div>
         </div>

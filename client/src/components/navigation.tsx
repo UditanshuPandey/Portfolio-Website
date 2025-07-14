@@ -3,21 +3,24 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "./theme-provider";
 import { Sun, Moon, Menu } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 const navItems = [
-  { href: "#home", label: "Home" },
-  { href: "#about", label: "About" },
-  { href: "#experience", label: "Experience" },
-  { href: "#projects", label: "Projects" },
-  { href: "#skills", label: "Skills" },
-  { href: "#education", label: "Education" },
-  { href: "#contact", label: "Contact" },
+  { href: "#home", label: "Home", type: "scroll" },
+  { href: "#about", label: "About", type: "scroll" },
+  { href: "#experience", label: "Experience", type: "scroll" },
+  { href: "#projects", label: "Projects", type: "scroll" },
+  { href: "#skills", label: "Skills", type: "scroll" },
+  { href: "#education", label: "Education", type: "scroll" },
+  { href: "/blog", label: "Blog", type: "link" },
+  { href: "#contact", label: "Contact", type: "scroll" },
 ];
 
 export default function Navigation() {
   const [activeSection, setActiveSection] = useState("home");
   const [isScrolled, setIsScrolled] = useState(false);
   const { theme, setTheme } = useTheme();
+  const [location] = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,6 +47,17 @@ export default function Navigation() {
     }
   };
 
+  const handleNavClick = (item: typeof navItems[0]) => {
+    if (item.type === "scroll") {
+      if (location !== "/") {
+        // If not on home page, navigate to home first, then scroll
+        window.location.href = `/${item.href}`;
+      } else {
+        scrollToSection(item.href);
+      }
+    }
+  };
+
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
       isScrolled 
@@ -59,17 +73,31 @@ export default function Navigation() {
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8">
             {navItems.map((item) => (
-              <button
-                key={item.href}
-                onClick={() => scrollToSection(item.href)}
-                className={`transition-colors ${
-                  activeSection === item.href.slice(1)
-                    ? "text-primary"
-                    : "text-gray-700 dark:text-gray-300 hover:text-primary"
-                }`}
-              >
-                {item.label}
-              </button>
+              item.type === "link" ? (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`transition-colors ${
+                    location === item.href
+                      ? "text-primary"
+                      : "text-gray-700 dark:text-gray-300 hover:text-primary"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <button
+                  key={item.href}
+                  onClick={() => handleNavClick(item)}
+                  className={`transition-colors ${
+                    activeSection === item.href.slice(1)
+                      ? "text-primary"
+                      : "text-gray-700 dark:text-gray-300 hover:text-primary"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              )
             ))}
           </div>
 
@@ -97,17 +125,31 @@ export default function Navigation() {
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <div className="flex flex-col space-y-4 mt-6">
                   {navItems.map((item) => (
-                    <button
-                      key={item.href}
-                      onClick={() => scrollToSection(item.href)}
-                      className={`text-left py-2 transition-colors ${
-                        activeSection === item.href.slice(1)
-                          ? "text-primary"
-                          : "text-gray-700 dark:text-gray-300 hover:text-primary"
-                      }`}
-                    >
-                      {item.label}
-                    </button>
+                    item.type === "link" ? (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`text-left py-2 transition-colors ${
+                          location === item.href
+                            ? "text-primary"
+                            : "text-gray-700 dark:text-gray-300 hover:text-primary"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <button
+                        key={item.href}
+                        onClick={() => handleNavClick(item)}
+                        className={`text-left py-2 transition-colors ${
+                          activeSection === item.href.slice(1)
+                            ? "text-primary"
+                            : "text-gray-700 dark:text-gray-300 hover:text-primary"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    )
                   ))}
                 </div>
               </SheetContent>

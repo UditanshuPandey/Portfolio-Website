@@ -36,22 +36,27 @@ Preferred communication style: Simple, everyday language.
 - **Projects Section**: Showcase of featured projects with technology badges
 - **Skills Section**: Interactive skill categories with progress indicators
 - **Education Section**: Academic background and certifications
+- **Blog Section**: Interactive blog listing with search, filtering, and featured articles
+- **Blog Detail Pages**: Individual blog post pages with sharing functionality
 - **Contact Section**: Contact form with validation and submission handling
 - **Theme System**: Light/dark mode toggle with persistent preferences
 
 ### Backend Components
 - **Contact API**: Handles form submissions with Zod validation
+- **Blog API**: Full CRUD operations for blog posts with search and filtering
 - **Logging Middleware**: Request/response logging for API endpoints
 - **Development Server**: Vite integration for hot module replacement
 - **Static File Serving**: Production-ready static asset serving
 
 ## Data Flow
 
-1. **Client-Side Rendering**: React components render the portfolio sections
-2. **Form Submission**: Contact form data is validated client-side with Zod
-3. **API Request**: Validated data is sent to `/api/contact` endpoint
-4. **Server Processing**: Express server validates and logs the contact form data
-5. **Response Handling**: Success/error responses are displayed to the user via toast notifications
+1. **Client-Side Rendering**: React components render the portfolio sections and blog content
+2. **Blog Data**: Blog posts are fetched from in-memory storage via REST API endpoints
+3. **Form Submission**: Contact form data is validated client-side with Zod
+4. **API Request**: Validated data is sent to `/api/contact` endpoint
+5. **Server Processing**: Express server validates and logs the contact form data
+6. **Response Handling**: Success/error responses are displayed to the user via toast notifications
+7. **Blog Navigation**: Individual blog posts are accessible via slug-based URLs with sharing functionality
 
 ## External Dependencies
 
